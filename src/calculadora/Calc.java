@@ -4,12 +4,16 @@
  */
 package calculadora;
 
+import java.awt.Toolkit;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import javax.swing.JOptionPane;
 import java.io.FileWriter;
 import java.io.BufferedWriter;
 import java.io.PrintWriter;
 import java.io.IOException;
 import java.time.LocalDateTime;
+
 
 /**
  *
@@ -64,6 +68,25 @@ private void reiniciarCalculadora() {
         
         initComponents();
         this.setLocationRelativeTo(null);
+        this.setFocusable(true);
+this.requestFocusInWindow();
+
+this.addKeyListener(new KeyAdapter() {
+    @Override
+    public void keyTyped(KeyEvent e) {
+        char tecla = e.getKeyChar();
+
+        if (Character.isDigit(tecla) || "+-*/.".indexOf(tecla) != -1) {
+            // Agrega el número o símbolo a la pantalla
+            pantalla.setText(pantalla.getText() + tecla);
+            Toolkit.getDefaultToolkit().beep(); // Sonido beep
+        } else if (tecla == '\n' || tecla == '=') { // Enter o =
+            jb_igual.doClick(); // Simula el clic en el botón igual
+        } else if (tecla == 'c' || tecla == 'C') {
+            jb_limpiar.doClick(); // Simula limpiar si tienes botón limpiar
+        }
+    }
+});
     }
 
     /**
