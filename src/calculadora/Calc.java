@@ -5,7 +5,11 @@
 package calculadora;
 
 import javax.swing.JOptionPane;
-import java.io.*;
+import java.io.FileWriter;
+import java.io.BufferedWriter;
+import java.io.PrintWriter;
+import java.io.IOException;
+import java.time.LocalDateTime;
 
 /**
  *
@@ -15,6 +19,41 @@ public class Calc extends javax.swing.JFrame {
     public float n1;
     public float n2;
     public String operador;
+    
+private void guardarEnHistorial(String operacion, float resultado) {
+    try (FileWriter fw = new FileWriter("bitacoraCalculadora.txt", true);
+         BufferedWriter bw = new BufferedWriter(fw);
+         PrintWriter out = new PrintWriter(bw)) {
+
+        String linea = java.time.LocalDateTime.now() + " - " + operacion + " = " + resultado;
+        out.println(linea);
+
+    } catch (IOException e) {
+        JOptionPane.showMessageDialog(this, "Error al guardar el historial.");
+    }
+}
+
+private void mostrarHistorial() {
+    StringBuilder contenido = new StringBuilder();
+    try (java.util.Scanner scanner = new java.util.Scanner(new java.io.File("bitacoraCalculadora.txt"))) {
+        while (scanner.hasNextLine()) {
+            contenido.append(scanner.nextLine()).append("\n");
+        }
+    } catch (java.io.FileNotFoundException e) {
+        JOptionPane.showMessageDialog(this, "No se encontró el archivo de historial.");
+        return;
+    }
+
+    JOptionPane.showMessageDialog(this, contenido.toString(), "Historial de Cálculos", JOptionPane.INFORMATION_MESSAGE);
+}
+private void reiniciarCalculadora() {
+    this.n1 = 0;
+    this.n2 = 0;
+    this.operador = "";
+    this.pantalla.setText(""); // Limpia el campo de texto de la pantalla
+}
+
+
     
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(Calc.class.getName());
 
@@ -71,6 +110,11 @@ public class Calc extends javax.swing.JFrame {
         pantalla.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
         pantalla.setBorder(new javax.swing.border.LineBorder(new java.awt.Color(204, 255, 255), 1, true));
         pantalla.setOpaque(true);
+        pantalla.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                pantallaKeyTyped(evt);
+            }
+        });
 
         jb_c.setText("C");
         jb_c.addActionListener(new java.awt.event.ActionListener() {
@@ -306,6 +350,11 @@ public class Calc extends javax.swing.JFrame {
         ayuda.setText("Ayuda");
 
         man_usu.setText("Manual de Usuario");
+        man_usu.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                man_usuActionPerformed(evt);
+            }
+        });
         ayuda.add(man_usu);
 
         menu_op.add(ayuda);
@@ -393,15 +442,30 @@ public class Calc extends javax.swing.JFrame {
     private void jb_igualActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jb_igualActionPerformed
         // TODO add your handling code here:
         this.n2=Float.parseFloat(this.pantalla.getText());
+        float resultado = 0;
         
-        switch(this.operador){
-            case "+":this.pantalla.setText(sincero(this.n1+this.n2));break;
-            case "-":this.pantalla.setText(sincero(this.n1-this.n2));break;
-            case "*":this.pantalla.setText(sincero(this.n1*this.n2));break;
-            case "/":if(this.n2==0){this.pantalla.setText("Error");}
-            else{
-                this.pantalla.setText(sincero(this.n1/this.n2));}break;
-        }
+          switch (this.operador) {
+        case "+":
+            resultado = this.n1 + this.n2;
+            break;
+        case "-":
+            resultado = this.n1 - this.n2;
+            break;
+        case "*":
+            resultado = this.n1 * this.n2;
+            break;
+        case "/":
+            if (this.n2 == 0) {
+                this.pantalla.setText("Error");
+                return;
+            } else {
+                resultado = this.n1 / this.n2;
+            }
+            break;
+    }
+          this.pantalla.setText(sincero(resultado));
+          
+          guardarEnHistorial(this.n1 + " " + this.operador + " " + this.n2, resultado);
     }//GEN-LAST:event_jb_igualActionPerformed
 
     private void jb_restaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jb_restaActionPerformed
@@ -438,13 +502,39 @@ public class Calc extends javax.swing.JFrame {
 
     private void nuevoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_nuevoActionPerformed
         // TODO add your handling code here:
-        JOptionPane.showMessageDialog(this,"Se hizo click en nuevo");
+         reiniciarCalculadora();
     }//GEN-LAST:event_nuevoActionPerformed
 
     private void historialActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_historialActionPerformed
         // TODO add your handling code here:
-        JOptionPane.showMessageDialog(this, "Se hizo clic en 'Historial'");
+        mostrarHistorial();
     }//GEN-LAST:event_historialActionPerformed
+
+    private void pantallaKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_pantallaKeyTyped
+        // TODO add your handling code here:
+        char c = evt.getKeyChar();
+
+    if (Character.isDigit(c) || c == '.' || c == '+' || c == '-' || c == '*' || c == '/' || c == '\b') {
+        java.awt.Toolkit.getDefaultToolkit().beep(); // Suena beep si es válido
+    } else {
+        evt.consume(); // Bloquea teclas no válidas
+    }
+    }//GEN-LAST:event_pantallaKeyTyped
+
+    private void man_usuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_man_usuActionPerformed
+        // TODO add your handling code here:
+        String mensaje = """
+        Manual del Usuario - Calculadora
+        
+        1. Ingresa los números utilizando el teclado o los botones.
+        2. Usa los botones de operaciones: +, -, *, /
+        3. Presiona "=" para obtener el resultado.
+        4. Menú Opciones > Historial guarda tus operaciones en un archivo.
+        5. Menú Opciones > Nuevo limpia la pantalla.
+        6. Cada tecla válida emite un beep.
+        """;
+    JOptionPane.showMessageDialog(this, mensaje, "Manual del Usuario", JOptionPane.INFORMATION_MESSAGE);
+    }//GEN-LAST:event_man_usuActionPerformed
     
     public String sincero(float result){
         String retorno="";        
